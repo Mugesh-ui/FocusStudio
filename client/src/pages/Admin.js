@@ -81,7 +81,7 @@ export default function AdminPage() {
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      const res = await fetch("http://localhost:5000/api/bookings");
+      const res = await fetch("https://focusstudio-backend.onrender.com/api/bookings");
       if (!res.ok) throw new Error("Failed to fetch bookings");
       const data = await res.json();
       setBookings(data);
