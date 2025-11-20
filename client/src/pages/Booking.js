@@ -65,7 +65,7 @@ export default function Booking() {
     if (!bookingId) return;
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/bookings/${bookingId}`);
+        const res = await fetch(`https://focusstudio-backend.onrender.com/api/bookings/${bookingId}`);
         if (!res.ok) return;
         const data = await res.json();
         if (data.status === "confirmed") {
@@ -101,7 +101,7 @@ export default function Booking() {
     e.preventDefault();
     setMessage("");
     try {
-      const res = await fetch("http://localhost:5000/api/bookings", {
+      const res = await fetch("https://focusstudio-backend.onrender.com/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
