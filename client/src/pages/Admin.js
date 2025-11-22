@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import Swal from './sweetalert2';
 import "./Admin.css";
 
 export default function AdminPage() {
@@ -11,6 +10,42 @@ export default function AdminPage() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [updating, setUpdating] = useState(null);
+
+  // ✅ Custom Popup State
+  const [showPopup, setShowPopup] = useState(false);
+  const [popupData, setPopupData] = useState({
+    title: "",
+    message: "",
+    type: "info", // info, success, error
+    onConfirm: null,
+    showCancel: false
+  });
+
+  // ✅ Show Custom Popup
+  const showCustomPopup = (title, message, type = "info", onConfirm = null, showCancel = false) => {
+    setPopupData({ title, message, type, onConfirm, showCancel });
+    setShowPopup(true);
+  };
+
+  // ✅ Hide Custom Popup
+  const hidePopup = () => {
+    setShowPopup(false);
+    setPopupData({
+      title: "",
+      message: "",
+      type: "info",
+      onConfirm: null,
+      showCancel: false
+    });
+  };
+
+  // ✅ Handle Confirm Action
+  const handlePopupConfirm = () => {
+    if (popupData.onConfirm) {
+      popupData.onConfirm();
+    }
+    hidePopup();
+  };
 
   // ✅ Add background styles directly in component
   useEffect(() => {
@@ -86,7 +121,7 @@ export default function AdminPage() {
       const data = await res.json();
       setBookings(data);
     } catch (err) {
-      Swal.fire("Error", err.message, "error");
+      showCustomPopup("Error", err.message, "error");
     } finally {
       setLoading(false);
     }
@@ -96,211 +131,266 @@ export default function AdminPage() {
     if (isAuthenticated) fetchBookings();
   }, [isAuthenticated]);
 
-  // ✅ Confirm booking with popup
+  // ✅ Confirm booking with custom popup
   const handleConfirm = async (id) => {
-    const result = await Swal.fire({
-      title: "Confirm Booking?",
-      text: "Are you sure you want to mark this booking as confirmed?",
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonText: "Yes, Confirm it!",
-      cancelButtonText: "Cancel",
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-    });
+    showCustomPopup(
+      "Confirm Booking?",
+      "Are you sure you want to mark this booking as confirmed?",
+      "info",
+      async () => {
+        try {
+          setUpdating(id);
 
-    if (!result.isConfirmed) return;
+          const res = await fetch('https://focusstudio-backend.onrender.com/api/bookings/${id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: "confirmed" }),
+          });
 
-    try {
-      setUpdating(id);
+          if (!res.ok) throw new Error("Failed to update booking status");
+          const updated = await res.json();
 
-      const res = await fetch(`https://focusstudio-backend.onrender.com/api/bookings/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "confirmed" }),
-      });
+          // Update UI immediately
+          setBookings((prev) =>
+            prev.map((b) => (b._id === id ? { ...b, status: updated.status } : b))
+          );
 
-      if (!res.ok) throw new Error("Failed to update booking status");
-      const updated = await res.json();
+          showCustomPopup("✅ Confirmed!", "Booking has been confirmed successfully.", "success");
+        } catch (err) {
+          showCustomPopup("Error", err.message, "error");
+        } finally {
+          setUpdating(null);
+        }
+      },
+      true
+    );
+  };
 
-      // Update UI immediately
-      setBookings((prev) =>
-        prev.map((b) => (b._id === id ? { ...b, status: updated.status } : b))
-      );
+  // ✅ Custom Popup Component
+  const CustomPopup = () => {
+    if (!showPopup) return null;
 
-      Swal.fire("✅ Confirmed!", "Booking has been confirmed successfully.", "success");
-    } catch (err) {
-      Swal.fire("Error", err.message, "error");
-    } finally {
-      setUpdating(null);
-    }
+    const getPopupIcon = () => {
+      switch (popupData.type) {
+        case "success": return "✅";
+        case "error": return "❌";
+        case "info": return "❓";
+        default: return "ℹ️";
+      }
+    };
+
+    const getPopupClass = () => {
+      switch (popupData.type) {
+        case "success": return "popup-success";
+        case "error": return "popup-error";
+        case "info": return "popup-info";
+        default: return "popup-info";
+      }
+    };
+
+    return (
+      <div className="popup-overlay">
+        <div className={`custom-popup ${getPopupClass()}`}>
+          <div className="popup-header">
+            <span className="popup-icon">{getPopupIcon()}</span>
+            <h3 className="popup-title">{popupData.title}</h3>
+          </div>
+          <div className="popup-content">
+            <p>{popupData.message}</p>
+          </div>
+          <div className="popup-actions">
+            {popupData.showCancel && (
+              <button 
+                className="popup-btn popup-cancel"
+                onClick={hidePopup}
+              >
+                Cancel
+              </button>
+            )}
+            <button 
+              className="popup-btn popup-confirm"
+              onClick={handlePopupConfirm}
+              autoFocus
+            >
+              {popupData.type === "info" ? "Confirm" : "OK"}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   // ✅ Login Page
   if (!isAuthenticated) {
     return (
-      <div className="admin-container">
-        <div className="login-box-clear">
-          <div className="login-header">
-            <h2>Focus Studio Admin</h2>
-            <p>Enter your credentials to access the dashboard</p>
+      <>
+        <CustomPopup />
+        <div className="admin-container">
+          <div className="login-box-clear">
+            <div className="login-header">
+              <h2>Focus Studio Admin</h2>
+              <p>Enter your credentials to access the dashboard</p>
+            </div>
+            <form onSubmit={handleLogin}>
+              <div className="input-group">
+                <label>Username</label>
+                <input
+                  type="text"
+                  placeholder="Enter username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="input-group">
+                <label>Password</label>
+                <input
+                  type="password"
+                  placeholder="Enter password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <button type="submit" className="login-btn">Login to Dashboard</button>
+            </form>
+            {error && <p className="error-message">{error}</p>}
           </div>
-          <form onSubmit={handleLogin}>
-            <div className="input-group">
-              <label>Username</label>
-              <input
-                type="text"
-                placeholder="Enter username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-              />
-            </div>
-            <div className="input-group">
-              <label>Password</label>
-              <input
-                type="password"
-                placeholder="Enter password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            <button type="submit" className="login-btn">Login to Dashboard</button>
-          </form>
-          {error && <p className="error-message">{error}</p>}
         </div>
-      </div>
+      </>
     );
   }
 
   // ✅ Dashboard Page
   return (
-    <div className="admin-container">
-      <div className="dashboard-clear">
-        <header className="dashboard-header">
-          <div className="header-content">
-            <h1>📊 Admin Dashboard</h1>
-            <p>Manage all bookings and customer requests</p>
-          </div>
-          <button onClick={handleLogout} className="logout-btn-clear">🚪 Logout</button>
-        </header>
+    <>
+      <CustomPopup />
+      <div className="admin-container">
+        <div className="dashboard-clear">
+          <header className="dashboard-header">
+            <div className="header-content">
+              <h1>📊 Admin Dashboard</h1>
+              <p>Manage all bookings and customer requests</p>
+            </div>
+            <button onClick={handleLogout} className="logout-btn-clear">🚪 Logout</button>
+          </header>
 
-        <div className="stats-overview">
-          <div className="stat-card">
-            <div className="stat-icon">📋</div>
-            <div className="stat-info">
-              <h3>{bookings.length}</h3>
-              <p>Total Bookings</p>
+          <div className="stats-overview">
+            <div className="stat-card">
+              <div className="stat-icon">📋</div>
+              <div className="stat-info">
+                <h3>{bookings.length}</h3>
+                <p>Total Bookings</p>
+              </div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-icon">✅</div>
+              <div className="stat-info">
+                <h3>{bookings.filter(b => b.status === 'confirmed').length}</h3>
+                <p>Confirmed</p>
+              </div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-icon">⏳</div>
+              <div className="stat-info">
+                <h3>{bookings.filter(b => !b.status || b.status === 'pending').length}</h3>
+                <p>Pending</p>
+              </div>
             </div>
           </div>
-          <div className="stat-card">
-            <div className="stat-icon">✅</div>
-            <div className="stat-info">
-              <h3>{bookings.filter(b => b.status === 'confirmed').length}</h3>
-              <p>Confirmed</p>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon">⏳</div>
-            <div className="stat-info">
-              <h3>{bookings.filter(b => !b.status || b.status === 'pending').length}</h3>
-              <p>Pending</p>
-            </div>
-          </div>
-        </div>
 
-        <div className="bookings-section">
-          <h2 className="section-title">All Bookings</h2>
-          
-          {loading ? (
-            <div className="loading-state">
-              <div className="spinner"></div>
-              <p>Loading bookings...</p>
-            </div>
-          ) : (
-            <div className="table-wrapper">
-              <table className="bookings-table">
-                <thead>
-                  <tr>
-                    <th>Customer</th>
-                    <th>Contact</th>
-                    <th>Date & Time</th>
-                    <th>Location</th>
-                    <th>Services</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {bookings.length === 0 ? (
+          <div className="bookings-section">
+            <h2 className="section-title">All Bookings</h2>
+            
+            {loading ? (
+              <div className="loading-state">
+                <div className="spinner"></div>
+                <p>Loading bookings...</p>
+              </div>
+            ) : (
+              <div className="table-wrapper">
+                <table className="bookings-table">
+                  <thead>
                     <tr>
-                      <td colSpan={7} className="no-data">
-                        <div className="empty-state">
-                          <span className="empty-icon">📭</span>
-                          <p>No bookings found</p>
-                          <small>All new bookings will appear here</small>
-                        </div>
-                      </td>
+                      <th>Customer</th>
+                      <th>Contact</th>
+                      <th>Date & Time</th>
+                      <th>Location</th>
+                      <th>Services</th>
+                      <th>Status</th>
+                      <th>Action</th>
                     </tr>
-                  ) : (
-                    bookings.map((booking) => (
-                      <tr key={booking._id} className="booking-row">
-                        <td data-label="Customer">
-                          <div className="customer-info">
-                            <strong>{booking.name}</strong>
+                  </thead>
+
+                  <tbody>
+                    {bookings.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="no-data">
+                          <div className="empty-state">
+                            <span className="empty-icon">📭</span>
+                            <p>No bookings found</p>
+                            <small>All new bookings will appear here</small>
                           </div>
-                        </td>
-                        <td data-label="Contact">
-                          <div className="contact-info">
-                            <div>{booking.email}</div>
-                            <div className="phone">{booking.phone}</div>
-                          </div>
-                        </td>
-                        <td data-label="Date & Time">
-                          <div className="datetime-info">
-                            <div className="date">{booking.date}</div>
-                            <div className="time">{booking.timeSession}</div>
-                          </div>
-                        </td>
-                        <td data-label="Location">
-                          <span className="location">{booking.place}</span>
-                        </td>
-                        <td data-label="Services">
-                          <div className="services-list">
-                            {Array.isArray(booking.services)
-                              ? booking.services.join(", ")
-                              : booking.services || "—"}
-                          </div>
-                        </td>
-                        <td data-label="Status">
-                          <span className={`status-badge ${booking.status === "confirmed" ? "confirmed" : "pending"}`}>
-                            {booking.status === "confirmed" ? "✅ Confirmed" : "⏳ Pending"}
-                          </span>
-                        </td>
-                        <td data-label="Action">
-                          {booking.status !== "confirmed" ? (
-                            <button
-                              onClick={() => handleConfirm(booking._id)}
-                              disabled={updating === booking._id}
-                              className={`action-btn confirm-action ${updating === booking._id ? "updating" : ""}`}
-                            >
-                              {updating === booking._id ? "🔄 Updating..." : "✅ Confirm"}
-                            </button>
-                          ) : (
-                            <span className="confirmed-label">Confirmed</span>
-                          )}
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
+                    ) : (
+                      bookings.map((booking) => (
+                        <tr key={booking._id} className="booking-row">
+                          <td data-label="Customer">
+                            <div className="customer-info">
+                              <strong>{booking.name}</strong>
+                            </div>
+                          </td>
+                          <td data-label="Contact">
+                            <div className="contact-info">
+                              <div>{booking.email}</div>
+                              <div className="phone">{booking.phone}</div>
+                            </div>
+                          </td>
+                          <td data-label="Date & Time">
+                            <div className="datetime-info">
+                              <div className="date">{booking.date}</div>
+                              <div className="time">{booking.timeSession}</div>
+                            </div>
+                          </td>
+                          <td data-label="Location">
+                            <span className="location">{booking.place}</span>
+                          </td>
+                          <td data-label="Services">
+                            <div className="services-list">
+                              {Array.isArray(booking.services)
+                                ? booking.services.join(", ")
+                                : booking.services || "—"}
+                            </div>
+                          </td>
+                          <td data-label="Status">
+                            <span className={`status-badge ${booking.status === "confirmed" ? "confirmed" : "pending"}`}>
+                              {booking.status === "confirmed" ? "✅ Confirmed" : "⏳ Pending"}
+                            </span>
+                          </td>
+                          <td data-label="Action">
+                            {booking.status !== "confirmed" ? (
+                              <button
+                                onClick={() => handleConfirm(booking._id)}
+                                disabled={updating === booking._id}
+                                className={`action-btn confirm-action ${updating === booking._id ? "updating" : ""}`}
+                              >
+                                {updating === booking._id ? "🔄 Updating..." : "✅ Confirm"}
+                              </button>
+                            ) : (
+                              <span className="confirmed-label">Confirmed</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
