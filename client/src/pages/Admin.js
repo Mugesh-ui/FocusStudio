@@ -116,7 +116,7 @@ export default function AdminPage() {
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      const res = await fetch("https://focusstudio-backend.onrender.com/api/bookings");
+      const res = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/bookings`);
       if (!res.ok) throw new Error("Failed to fetch bookings");
       const data = await res.json();
       setBookings(data);
@@ -141,7 +141,7 @@ export default function AdminPage() {
         try {
           setUpdating(id);
 
-          const res = await fetch('https://focusstudio-backend.onrender.com/api/bookings/${id}`, {
+          const res = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/bookings/${id}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ status: "confirmed" }),
@@ -325,7 +325,7 @@ export default function AdminPage() {
                   <tbody>
                     {bookings.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="no-data">
+                        <td colSpan="7" className="no-data">
                           <div className="empty-state">
                             <span className="empty-icon">📭</span>
                             <p>No bookings found</p>
