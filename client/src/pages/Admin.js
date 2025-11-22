@@ -114,7 +114,7 @@ export default function AdminPage() {
     try {
       setUpdating(id);
 
-      const res = await fetch(`http://localhost:5000/api/bookings/${id}`, {
+      const res = await fetch(`https://focusstudio-backend.onrender.com/api/bookings/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "confirmed" }),
