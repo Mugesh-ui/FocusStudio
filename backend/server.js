@@ -1,4 +1,4 @@
-// backend/server.js
+// backend/server.js - FIXED MONGODB CONNECTION
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
@@ -8,7 +8,7 @@ import bookingsRouter from "./routes/booking.js";
 dotenv.config();
 const app = express();
 
-// ✅ ONLY CHANGE MADE: Updated CORS configuration
+// ✅ CORS configuration - CORRECT
 app.use(cors({
   origin: [
     'https://focusdigitalvallioor.onrender.com',
@@ -19,16 +19,19 @@ app.use(cors({
 
 app.use(express.json());
 
-// ✅ Connect to MongoDB
+// ✅ FIXED MongoDB connection
 mongoose
-  .connect(process.env.MONGO_URI ||"mongodb+srv://focusdigital:1234@cluster0.oqsldsg.mongodb.net/?appName=Cluster0", {
+  .connect(process.env.MONGO_URI || "mongodb+srv://focusdigital:1234@cluster0.oqsldsg.mongodb.net/focusstudio?retryWrites=true&w=majority", {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
   .then(() => console.log("✅ MongoDB connected"))
-  .catch((err) => console.error("Mongo connection error:", err));
+  .catch((err) => {
+    console.error("Mongo connection error:", err);
+    process.exit(1);
+  });
 
-// ✅ Root route - Add this to fix "Cannot GET /"
+// ✅ Root route
 app.get("/", (req, res) => {
   res.json({ 
     message: "🎯 Focus Studio Backend API is running!",
@@ -53,7 +56,7 @@ app.get("/", (req, res) => {
 // ✅ Mount main bookings router
 app.use("/api/bookings", bookingsRouter);
 
-/* ── Extra endpoints if you need simple admin/order listing without a separate router ── */
+/* ── Extra endpoints ── */
 import Booking from "./models/Booking.js";
 
 // List all orders for admin dashboard
@@ -67,7 +70,7 @@ app.get("/api/orders", async (req, res) => {
   }
 });
 
-// Quick create route if you ever want a bare POST /api/booking (singular)
+// Quick create route
 app.post("/api/booking", async (req, res) => {
   try {
     const booking = await Booking.create(req.body);
@@ -80,5 +83,5 @@ app.post("/api/booking", async (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () =>
-  console.log(`🚀 Backend running at http://localhost:${PORT}`)
+  console.log(`🚀 Backend running on port ${PORT}`)
 );
