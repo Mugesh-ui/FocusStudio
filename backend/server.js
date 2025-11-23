@@ -11,7 +11,7 @@ const app = express();
 // ✅ ONLY CHANGE MADE: Updated CORS configuration
 app.use(cors({
   origin: [
-    'https://focusstudiovllr.onrender.com',
+    'https://focusdigitalvallioor.onrender.com',
     'http://localhost:3000'
   ],
   credentials: true
