@@ -21,7 +21,7 @@ app.use(express.json());
 
 // ✅ Connect to MongoDB
 mongoose
-  .connect(process.env.MONGO_URI || "mongodb://127.0.0.1:27017/focusstudio", {
+  .connect(process.env.MONGO_URI ||"mongodb+srv://focusdigital:1234@cluster0.oqsldsg.mongodb.net/?appName=Cluster0", {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
