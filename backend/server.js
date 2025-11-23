@@ -8,7 +8,15 @@ import bookingsRouter from "./routes/booking.js";
 dotenv.config();
 const app = express();
 
-app.use(cors());
+// ✅ ONLY CHANGE MADE: Updated CORS configuration
+app.use(cors({
+  origin: [
+    'https://focusstudiovllr.onrender.com',
+    'http://localhost:3000'
+  ],
+  credentials: true
+}));
+
 app.use(express.json());
 
 // ✅ Connect to MongoDB
