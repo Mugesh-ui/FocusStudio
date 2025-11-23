@@ -435,7 +435,7 @@ function Footer() {
 
 function PopupManager() {
   const [isPopupActive, setIsPopupActive] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(60000); // 1 minute
+  const [timeLeft, setTimeLeft] = useState(420000); // 1 minute
 
   useEffect(() => {
     // Show first popup after 2 seconds
