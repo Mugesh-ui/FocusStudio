@@ -441,14 +441,14 @@ function PopupManager() {
     // Show first popup after 2 seconds
     const initialTimer = setTimeout(() => {
       setIsPopupActive(true);
-    }, 2000);
+    }, 20000);
 
     // Set up the recurring timer
     const timer = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 0) {
           setIsPopupActive(true);
-          return 60000;
+          return 600000;
         }
         return prev - 1000;
       });
