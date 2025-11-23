@@ -112,11 +112,12 @@ export default function AdminPage() {
     setPassword("");
   };
 
-  // ✅ Fetch bookings
+  // ✅ Fetch bookings - UPDATED
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/bookings`);
+      const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const res = await fetch(`${API_BASE}/api/bookings`);
       if (!res.ok) throw new Error("Failed to fetch bookings");
       const data = await res.json();
       setBookings(data);
@@ -131,7 +132,7 @@ export default function AdminPage() {
     if (isAuthenticated) fetchBookings();
   }, [isAuthenticated]);
 
-  // ✅ Confirm booking with custom popup
+  // ✅ Confirm booking - UPDATED
   const handleConfirm = async (id) => {
     showCustomPopup(
       "Confirm Booking?",
@@ -140,8 +141,9 @@ export default function AdminPage() {
       async () => {
         try {
           setUpdating(id);
+          const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
-          const res = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/bookings/${id}`, {
+          const res = await fetch(`${API_BASE}/api/bookings/${id}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ status: "confirmed" }),
@@ -150,7 +152,6 @@ export default function AdminPage() {
           if (!res.ok) throw new Error("Failed to update booking status");
           const updated = await res.json();
 
-          // Update UI immediately
           setBookings((prev) =>
             prev.map((b) => (b._id === id ? { ...b, status: updated.status } : b))
           );
