@@ -449,10 +449,9 @@ function PopupManager() {
         if (prev <= 0) {
           setIsPopupActive(true);
           return 600000;
-        }
-        return prev - 1000;
+        }focusstudiovlr@gmail.com";
       });
-    }, 1000);
+    }, 10000);
 
     return () => {
       clearTimeout(initialTimer);
@@ -462,7 +461,7 @@ function PopupManager() {
 
   const hidePopup = () => {
     setIsPopupActive(false);
-    setTimeLeft(60000); // Reset timer when manually closed
+    setTimeLeft(600000); // Reset timer when manually closed
   };
 
   const formatTime = (time) => {
