@@ -20,6 +20,10 @@ export default function Booking() {
   const [customService, setCustomService] = useState("");
   const [message, setMessage] = useState("");
   const [bookingId, setBookingId] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  // ✅ Use environment variable or fallback to your Render backend URL
+  const API_BASE = process.env.REACT_APP_API_URL || 'https://focusstudio-backend.onrender.com';
 
   // ✅ Add background styles directly in component (same as Admin page)
   useEffect(() => {
@@ -65,7 +69,7 @@ export default function Booking() {
     if (!bookingId) return;
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`https://focusstudio-backend.onrender.com/api/bookings/${bookingId}`);
+        const res = await fetch(`${API_BASE}/api/bookings/${bookingId}`);
         if (!res.ok) return;
         const data = await res.json();
         if (data.status === "confirmed") {
@@ -73,11 +77,11 @@ export default function Booking() {
           clearInterval(interval);
         }
       } catch (err) {
-        console.error(err);
+        console.error("Polling error:", err);
       }
     }, 10000);
     return () => clearInterval(interval);
-  }, [bookingId]);
+  }, [bookingId, API_BASE]);
 
   // Toggle default service selection
   const handleServiceToggle = (service) => {
@@ -96,12 +100,14 @@ export default function Booking() {
     }
   };
 
-  // Submit booking form
+  // Submit booking form - FIXED
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage("");
+    setLoading(true);
+
     try {
-      const res = await fetch("https://focusstudio-backend.onrender.com/api/bookings", {
+      const res = await fetch(`${API_BASE}/api/bookings`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -114,10 +120,16 @@ export default function Booking() {
           services,
         }),
       });
-      if (!res.ok) throw new Error("Network error");
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
+      }
+      
       const data = await res.json();
-      setBookingId(data._id);
-      setMessage("✅ Booking request sent! Status: PENDING.");
+      setBookingId(data._id || data.bookingId);
+      setMessage("✅ Booking request sent! Status: PENDING. We'll notify you when confirmed.");
+      
       // Reset form
       setName("");
       setEmail("");
@@ -127,9 +139,12 @@ export default function Booking() {
       setTimeSession("AM");
       setServices([]);
       setCustomService("");
+      
     } catch (err) {
-      console.error(err);
-      setMessage("❌ Something went wrong. Please try again.");
+      console.error("Booking error:", err);
+      setMessage(`❌ Failed to book: ${err.message}. Please try again or contact us.`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -276,8 +291,12 @@ export default function Booking() {
             />
           </div>
 
-          <button type="submit" className="submit-btn-blur">
-            🚀 Book Now
+          <button 
+            type="submit" 
+            className="submit-btn-blur"
+            disabled={loading}
+          >
+            {loading ? "🔄 Booking..." : "🚀 Book Now"}
           </button>
         </form>
       </div>
@@ -286,7 +305,8 @@ export default function Booking() {
         <div className="booking-popup-overlay">
           <div className="booking-popup-content-blur">
             <div className="popup-header">
-              {message.includes("CONFIRMED") ? "🎉 Congratulations!" : "📋 Booking Status"}
+              {message.includes("CONFIRMED") ? "🎉 Congratulations!" : 
+               message.includes("Failed") ? "❌ Error" : "📋 Booking Status"}
             </div>
             <p>{message}</p>
             <button className="booking-close-btn-blur" onClick={() => setMessage("")}>
