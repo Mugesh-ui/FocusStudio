@@ -22,20 +22,17 @@ export default function Booking() {
   const [bookingId, setBookingId] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // ✅ Use environment variable or fallback to your Render backend URL
-  const API_BASE = process.env.REACT_APP_API_URL || 'https://focusstudio-backend.onrender.com';
+  // ✅ Use your actual backend URL
+  const API_BASE = "https://focusstudio-backend.onrender.com";
 
-  // ✅ Add background styles directly in component (same as Admin page)
+  // ✅ Background styles
   useEffect(() => {
-    // Set background styles dynamically with blur
     document.body.style.backgroundImage = "url('/scrolling.jpg')";
     document.body.style.backgroundSize = 'cover';
     document.body.style.backgroundPosition = 'center';
     document.body.style.backgroundAttachment = 'fixed';
     document.body.style.backgroundRepeat = 'no-repeat';
-    document.body.style.position = 'relative';
     
-    // Add overlay with blur effect
     const overlay = document.createElement('div');
     overlay.style.position = 'fixed';
     overlay.style.top = '0';
@@ -48,19 +45,10 @@ export default function Booking() {
     overlay.id = 'booking-overlay';
     document.body.appendChild(overlay);
 
-    // Cleanup function
     return () => {
       document.body.style.backgroundImage = '';
-      document.body.style.backgroundSize = '';
-      document.body.style.backgroundPosition = '';
-      document.body.style.backgroundAttachment = '';
-      document.body.style.backgroundRepeat = '';
-      document.body.style.position = '';
-      
       const existingOverlay = document.getElementById('booking-overlay');
-      if (existingOverlay) {
-        document.body.removeChild(existingOverlay);
-      }
+      if (existingOverlay) document.body.removeChild(existingOverlay);
     };
   }, []);
 
@@ -81,9 +69,8 @@ export default function Booking() {
       }
     }, 10000);
     return () => clearInterval(interval);
-  }, [bookingId, API_BASE]);
+  }, [bookingId]);
 
-  // Toggle default service selection
   const handleServiceToggle = (service) => {
     setServices((prev) =>
       prev.includes(service)
@@ -92,7 +79,6 @@ export default function Booking() {
     );
   };
 
-  // Add custom service
   const handleAddCustomService = () => {
     if (customService.trim() && !services.includes(customService)) {
       setServices((prev) => [...prev, customService]);
@@ -100,33 +86,51 @@ export default function Booking() {
     }
   };
 
-  // Submit booking form - FIXED
+  // ✅ FIXED Submit function
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage("");
     setLoading(true);
 
+    // Validate required fields
+    if (!name || !email || !phone || !date || !place) {
+      setMessage("❌ Please fill in all required fields");
+      setLoading(false);
+      return;
+    }
+
     try {
+      console.log("Submitting booking to:", `${API_BASE}/api/bookings`);
+      
+      const bookingData = {
+        name,
+        email,
+        phone,
+        date,
+        timeSession,
+        place,
+        services: services.length > 0 ? services : ["General Photography Service"],
+      };
+
       const res = await fetch(`${API_BASE}/api/bookings`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          email,
-          phone,
-          date,
-          timeSession,
-          place,
-          services,
-        }),
+        headers: { 
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(bookingData),
       });
       
+      console.log("Response status:", res.status);
+      
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
+        const errorText = await res.text();
+        console.error("Server error response:", errorText);
+        throw new Error(`Server error: ${res.status} - ${errorText}`);
       }
       
       const data = await res.json();
+      console.log("Booking response:", data);
+      
       setBookingId(data._id || data.bookingId);
       setMessage("✅ Booking request sent! Status: PENDING. We'll notify you when confirmed.");
       
@@ -142,7 +146,7 @@ export default function Booking() {
       
     } catch (err) {
       console.error("Booking error:", err);
-      setMessage(`❌ Failed to book: ${err.message}. Please try again or contact us.`);
+      setMessage(`❌ Booking failed: ${err.message}. Please try again or contact us directly.`);
     } finally {
       setLoading(false);
     }
@@ -159,7 +163,7 @@ export default function Booking() {
         <form onSubmit={handleSubmit}>
           <div className="form-row">
             <div className="input-group">
-              <label>Full Name</label>
+              <label>Full Name *</label>
               <input 
                 value={name} 
                 onChange={(e) => setName(e.target.value)} 
@@ -168,7 +172,7 @@ export default function Booking() {
               />
             </div>
             <div className="input-group">
-              <label>Email Address</label>
+              <label>Email Address *</label>
               <input 
                 type="email" 
                 value={email} 
@@ -181,7 +185,7 @@ export default function Booking() {
 
           <div className="form-row">
             <div className="input-group">
-              <label>Phone Number</label>
+              <label>Phone Number *</label>
               <input 
                 value={phone} 
                 onChange={(e) => setPhone(e.target.value)} 
@@ -190,7 +194,7 @@ export default function Booking() {
               />
             </div>
             <div className="input-group">
-              <label>Preferred Date</label>
+              <label>Preferred Date *</label>
               <input 
                 type="date" 
                 value={date} 
@@ -250,7 +254,7 @@ export default function Booking() {
               <div className="custom-input-group">
                 <input
                   type="text"
-                  placeholder="Enter custom service (e.g., Mug Printing, T-Shirt Design)"
+                  placeholder="Enter custom service"
                   value={customService}
                   onChange={(e) => setCustomService(e.target.value)}
                 />
@@ -282,7 +286,7 @@ export default function Booking() {
           </div>
 
           <div className="input-group">
-            <label>📍 Location</label>
+            <label>📍 Location *</label>
             <input
               value={place}
               onChange={(e) => setPlace(e.target.value)}
@@ -306,7 +310,7 @@ export default function Booking() {
           <div className="booking-popup-content-blur">
             <div className="popup-header">
               {message.includes("CONFIRMED") ? "🎉 Congratulations!" : 
-               message.includes("Failed") ? "❌ Error" : "📋 Booking Status"}
+               message.includes("failed") ? "❌ Error" : "📋 Booking Status"}
             </div>
             <p>{message}</p>
             <button className="booking-close-btn-blur" onClick={() => setMessage("")}>
