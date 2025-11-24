@@ -297,7 +297,7 @@ function Footer() {
                 <span className="contact-icon">📧</span>
                 <a href="mailto:focusstudiovlr@gmail.com">focusstudiovl@gmail.com</a>
               </div>
-              <div className="contact-item">
+              <div className="contact-item" onClick={() => setShowPopup(true)} style={{cursor: 'pointer'}}>
                 <span className="contact-icon">📍</span>
                 <span>Main Road, Vallioor - 627117</span>
               </div>
@@ -356,7 +356,7 @@ function Footer() {
         </div>
       </footer>
 
-      {/* Enhanced Location Popup with Map */}
+      {/* Enhanced Location Popup with Map - Only shows when address is clicked */}
       {showPopup && (
         <div className="popup-overlay" onClick={() => setShowPopup(false)}>
           <div
@@ -369,7 +369,7 @@ function Footer() {
                 alt="Focus Studio Logo"
                 className="popup-logo"
               />
-              <h3>Welcome to Focus Studio! 🎉</h3>
+              <h3>Visit Focus Studio! 🎉</h3>
             </div>
             
             <div className="popup-body">
@@ -420,117 +420,17 @@ function Footer() {
                 className="close-popup-button"
                 onClick={() => setShowPopup(false)}
               >
-                🎉 Start Exploring
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  );
-}
-
-// Popup Management System (React Version) - Focus Digital Vallioor
-
-
-function PopupManager() {
-  const [isPopupActive, setIsPopupActive] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(420000); // 1 minute
-
-  useEffect(() => {
-    // Show first popup after 2 seconds
-    const initialTimer = setTimeout(() => {
-      setIsPopupActive(true);
-    }, 20000);
-
-    // Set up the recurring timer
-    const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 0) {
-          setIsPopupActive(true);
-          return 600000;
-        }focusstudiovlr@gmail.com";
-      });
-    }, 10000);
-
-    return () => {
-      clearTimeout(initialTimer);
-      clearInterval(timer);
-    };
-  }, []);
-
-  const hidePopup = () => {
-    setIsPopupActive(false);
-    setTimeLeft(600000); // Reset timer when manually closed
-  };
-
-  const formatTime = (time) => {
-    const minutes = Math.floor(time / 60000);
-    const seconds = Math.floor((time % 60000) / 1000);
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  };
-
-  return (
-    <>
-      {isPopupActive && (
-        <div className="popup-overlay" onClick={hidePopup}>
-          <div className="popup-content" onClick={(e) => e.stopPropagation()}>
-            <button className="close-popup" onClick={hidePopup}>&times;</button>
-            <div className="popup-header">
-              <h3>📍 Visit Focus Digital Vallioor</h3>
-              <p>Your Local Digital Solution Provider</p>
-            </div>
-            <div className="popup-body">
-              <div className="map-container">
-                <iframe 
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3945.116668152897!2d77.61372277470005!3d8.558678491456886!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3b04ef7c69bfbc3d%3A0xbe8c534aa804d1b9!2sVallioor%2C%20Tamil%20Nadu%20627117!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin" 
-                  width="100%" 
-                  height="200" 
-                  style={{border: 0, borderRadius: '8px'}} 
-                  allowFullScreen 
-                  loading="lazy" 
-                  referrerPolicy="no-referrer-when-downgrade"
-                  title="Focus Digital Vallioor Location"
-                >
-                </iframe>
-              </div>
-              <div className="location-info">
-                <p><strong>🏢 Focus Digital</strong></p>
-                <p>📌 Main Road, Vallioor</p>
-                <p>🏙️ Tamil Nadu - 627117</p>
-                <p>📞 +91 9944527244</p>
-                <p>📧 focusdigitalvlr@gmail.com.com</p>
-                <p>🕒 Mon-Sun: 9:00 AM - 8:00 PM</p>
-              </div>
-            </div>
-            <div className="popup-actions">
-              <button 
-                className="popup-button primary" 
-                onClick={() => {
-                  window.open('https://maps.google.com/?q=Vallioor,+Tamil+Nadu+627117', '_blank');
-                  hidePopup();
-                }}
-              >
-                📍 Get Directions
-              </button>
-              <button className="popup-button secondary" onClick={hidePopup}>
                 Close
               </button>
             </div>
           </div>
         </div>
       )}
-      
-      <div className={`popup-timer ${isPopupActive ? 'visible' : ''}`}>
-        Next location reminder in: {formatTime(timeLeft)}
-      </div>
     </>
   );
 }
 
-
-
-// Placeholder components for routes
+// Removed PopupManager component since we don't need automatic popups anymore
 
 // ---------- Main App ----------
 function App() {
@@ -545,7 +445,7 @@ function App() {
         <Route path="/profile" element={<Profile />} />
       </Routes>
       <Footer />
-      <PopupManager />
+      {/* Removed PopupManager from here */}
     </Router>
   );
 }
